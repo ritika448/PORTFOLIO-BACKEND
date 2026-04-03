@@ -24,11 +24,9 @@ app.post('/api/contact', async (req, res) => {
     return res.status(400).json({ message: 'All fields are required' });
   }
 
-  // Use the email user from environment variables
+  // Use the email service for better compatibility on cloud providers like Render
   const transporter = nodemailer.createTransport({
-    host: "smtp.gmail.com",
-    port: 587,
-    secure: false,
+    service: 'gmail',
     auth: {
       user: process.env.EMAIL_USER,
       pass: process.env.EMAIL_PASS
@@ -103,12 +101,21 @@ app.post('/api/contact', async (req, res) => {
   }
 });
 
-// Basic MongoDB Connection (Placeholder - you can change the URI in .env)
-const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/portfolio';
+// MongoDB Connection
+const MONGODB_URI = process.env.MONGODB_URI;
 
-mongoose.connect(MONGODB_URI)
-  .then(() => console.log('MongoDB Connected'))
-  .catch(err => console.log('MongoDB Connection Error:', err));
+if (!MONGODB_URI) {
+  console.warn('WARNING: MONGODB_URI is not defined. Falling back to localhost for development.');
+}
+
+const dbURI = MONGODB_URI || 'mongodb://localhost:27017/portfolio';
+
+mongoose.connect(dbURI)
+  .then(() => console.log(`MongoDB Connected: ${dbURI.includes('localhost') ? 'Local' : 'Cloud Atlas'}`))
+  .catch(err => {
+    console.error('MongoDB Connection Error:', err);
+    console.error('Suggestion: Ensure MONGODB_URI is set correctly in your environment variables.');
+  });
 
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
