@@ -2,7 +2,11 @@ const express = require('express');
 const cors = require('cors');
 const mongoose = require('mongoose');
 const nodemailer = require('nodemailer');
+const dns = require('dns');
 require('dotenv').config();
+
+// Force IPv4 to prevent ENETUNREACH errors on IPv6-heavy networks (like Render)
+dns.setDefaultResultOrder('ipv4first');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -24,11 +28,9 @@ app.post('/api/contact', async (req, res) => {
     return res.status(400).json({ message: 'All fields are required' });
   }
 
-  // Use the email service for better compatibility on cloud providers like Render
+  // Use the email service with forced IPv4 compatibility
   const transporter = nodemailer.createTransport({
-    host: "smtp.gmail.com",
-    port: 587,
-    secure: false,
+    service: 'gmail',
     auth: {
       user: process.env.EMAIL_USER,
       pass: process.env.EMAIL_PASS
